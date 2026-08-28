@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Compiler Panel</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="card" id="loginCard">
+  <h1>ورود به پنل</h1>
+  <label>نام کاربری</label>
+  <input type="text" id="loginUser" autofocus />
+  <label>رمز عبور</label>
+  <input type="password" id="loginPass" />
+  <button id="loginBtn">ورود</button>
+  <div class="error" id="loginError" style="display:none;"></div>
+</div>
+
+<div class="card wide" id="dashboardCard" style="display:none;">
+  <div class="top-bar">
+    <h1 style="margin:0;">ساخت برنامه از روی سایت</h1>
+    <a class="logout" href="#" id="logoutLink">خروج</a>
+  </div>
+
+  <form id="buildForm">
+    <label>نام برنامه</label>
+    <input type="text" name="app_name" id="app_name" required placeholder="مثلاً فروشگاه من" />
+
+    <label>آیکون برنامه (اختیاری، PNG یا JPG)</label>
+    <input type="file" name="icon" id="icon" accept="image/png,image/jpeg" />
+
+    <label>فایل zip سایت (باید شامل index.html در ریشه باشد)</label>
+    <input type="file" name="site_zip" id="site_zip" accept=".zip" required />
+    <div class="hint">همه‌ی فایل‌های سایت (html, css, js, فونت، عکس و ...) را یک‌جا zip کن و همین یک فایل را آپلود کن.</div>
+
+    <button type="submit" id="submitBtn">ساخت برنامه</button>
+  </form>
+
+  <div class="status-box" id="statusBox">
+    <div class="status-line">
+      <span class="dot" id="workflowDot"></span>
+      <span id="workflowText">در حال بررسی وضعیت...</span>
+    </div>
+    <div class="downloads" id="downloads" style="display:none;"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
