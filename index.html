@@ -54,6 +54,19 @@
           </div>
         </div>
 
+        <label>پلتفرم خروجی</label>
+        <div class="platform-choices">
+          <label class="platform-chip">
+            <input type="checkbox" name="platform_windows" id="platform_windows" checked />
+            <span>ویندوز</span>
+          </label>
+          <label class="platform-chip">
+            <input type="checkbox" name="platform_android" id="platform_android" checked />
+            <span>اندروید</span>
+          </label>
+        </div>
+        <div class="platform-error" id="platformError">حداقل یکی از پلتفرم‌ها را انتخاب کن.</div>
+
         <label>فایل zip سایت</label>
         <div class="dropzone dropzone-zip" id="zipDropzone">
           <input type="file" name="site_zip" id="site_zip" accept=".zip" required hidden />

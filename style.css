@@ -205,6 +205,25 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .hint { color: var(--muted); font-size: 12px; margin-top: 8px; line-height: 1.6; }
 
+.platform-choices { display: flex; gap: 10px; }
+.platform-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: #081420;
+  cursor: pointer;
+  font-size: 13.5px;
+  flex: 1;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+.platform-chip input { accent-color: var(--accent); width: 15px; height: 15px; }
+.platform-chip:has(input:checked) { border-color: var(--accent-dim); background: var(--accent-soft); color: var(--text); }
+.platform-error { color: var(--danger); font-size: 12px; margin-top: 6px; display: none; }
+
 /* --- Pipeline stepper (signature element) --- */
 .pipeline {
   display: flex;

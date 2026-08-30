@@ -29,6 +29,10 @@ const zipDropzone = document.getElementById('zipDropzone');
 const zipDropBody = document.getElementById('zipDropBody');
 const zipFileChip = document.getElementById('zipFileChip');
 
+const platformWindows = document.getElementById('platform_windows');
+const platformAndroid = document.getElementById('platform_android');
+const platformError = document.getElementById('platformError');
+
 let pollTimer = null;
 
 function getToken() {
@@ -95,7 +99,10 @@ logoutLink.addEventListener('click', (e) => {
 
 // --- Dropzones ---
 function setupDropzone(dropzone, input, onFiles) {
-  dropzone.addEventListener('click', () => input.click());
+  dropzone.addEventListener('click', (e) => {
+    if (e.target === input) return; // this click is the input's own (bubbled) synthetic click - don't re-trigger
+    input.click();
+  });
   dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-over'); });
   dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
   dropzone.addEventListener('drop', (e) => {
@@ -153,6 +160,17 @@ function resetPipeline() {
 // --- Build submission (XHR so we get upload progress) ---
 form.addEventListener('submit', (e) => {
   e.preventDefault();
+
+  if (!platformWindows.checked && !platformAndroid.checked) {
+    platformError.style.display = 'block';
+    return;
+  }
+  platformError.style.display = 'none';
+
+  let platforms = 'both';
+  if (platformWindows.checked && !platformAndroid.checked) platforms = 'windows';
+  if (!platformWindows.checked && platformAndroid.checked) platforms = 'android';
+
   submitBtn.disabled = true;
   submitBtnLabel.textContent = 'در حال ارسال...';
   statusBox.classList.add('show');
@@ -167,6 +185,7 @@ form.addEventListener('submit', (e) => {
   progressLabel.textContent = '0%';
 
   const formData = new FormData(form);
+  formData.set('platforms', platforms);
   const xhr = new XMLHttpRequest();
   xhr.open('POST', `${API_BASE_URL}/build`);
   xhr.setRequestHeader('Authorization', 'Bearer ' + getToken());
@@ -212,6 +231,7 @@ form.addEventListener('submit', (e) => {
     setPipelineStep('build', 'active');
     workflowText.textContent = 'ارسال شد، منتظر شروع ساخت روی گیت‌هاب...';
     startPolling();
+    loadHistory();
   });
 
   xhr.addEventListener('error', () => {
@@ -228,7 +248,7 @@ form.addEventListener('submit', (e) => {
 
 function startPolling() {
   if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(checkStatus, 6000);
+  pollTimer = setInterval(() => { checkStatus(); loadHistory(); }, 6000);
   checkStatus();
 }
 
@@ -314,7 +334,7 @@ async function loadHistory() {
       return;
     }
 
-    renderHistory(data.releases);
+    renderHistory(data.items);
   } catch (err) {
     historyList.innerHTML = `<div class="hint">خطای شبکه در بارگذاری تاریخچه.</div>`;
   }
@@ -322,46 +342,64 @@ async function loadHistory() {
 
 const TRASH_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
 
-function renderHistory(releases) {
-  if (!releases || releases.length === 0) {
+function historyStatusInfo(item) {
+  if (item.status !== 'completed') {
+    return { dotClass: 'progress', label: item.status === 'queued' ? 'در صف' : 'در حال ساخت' };
+  }
+  if (item.conclusion === 'failure') {
+    return { dotClass: 'err', label: 'ناموفق' };
+  }
+  if (item.exe_url || item.apk_url) {
+    return { dotClass: 'ok', label: 'آماده' };
+  }
+  return { dotClass: '', label: item.conclusion || '—' };
+}
+
+function renderHistory(items) {
+  if (!items || items.length === 0) {
     historyList.innerHTML = `<div class="hint">هنوز هیچ برنامه‌ای ساخته نشده.</div>`;
     return;
   }
 
   historyList.innerHTML = '';
-  for (const rel of releases) {
-    const item = document.createElement('div');
-    item.className = 'history-item';
+  for (const item of items) {
+    const row = document.createElement('div');
+    row.className = 'history-item';
 
-    const date = new Date(rel.published_at);
-    const dateText = isNaN(date) ? rel.published_at : date.toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' });
+    const date = new Date(item.created_at);
+    const dateText = isNaN(date) ? item.created_at : date.toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' });
+    const info = historyStatusInfo(item);
 
     const links = [];
-    if (rel.exe_url) links.push(`<a href="${rel.exe_url}">exe</a>`);
-    if (rel.apk_url) links.push(`<a href="${rel.apk_url}">apk</a>`);
+    if (item.exe_url) links.push(`<a href="${item.exe_url}">exe</a>`);
+    if (item.apk_url) links.push(`<a href="${item.apk_url}">apk</a>`);
 
-    item.innerHTML = `
+    row.innerHTML = `
       <div class="history-info">
-        <div class="history-name">${escapeHtml(rel.name || rel.tag)}</div>
+        <div class="history-name">
+          <span class="dot ${info.dotClass}" style="display:inline-block; margin-left:6px;"></span>
+          ${escapeHtml(item.app_name)}
+        </div>
         <div class="history-meta">
           <span class="history-date">${dateText}</span>
-          <span class="history-tag">${escapeHtml(rel.tag)}</span>
+          <span class="history-tag">${escapeHtml(item.tag)}</span>
+          <span class="history-date">${escapeHtml(info.label)}</span>
         </div>
       </div>
       <div class="history-actions">
         ${links.join('')}
-        <button class="history-delete" data-tag="${escapeHtml(rel.tag)}" title="حذف از تاریخچه">${TRASH_ICON}</button>
+        <button class="history-delete" data-run="${item.run_number}" title="حذف از تاریخچه">${TRASH_ICON}</button>
       </div>
     `;
-    historyList.appendChild(item);
+    historyList.appendChild(row);
   }
 
   historyList.querySelectorAll('.history-delete').forEach((btn) => {
-    btn.addEventListener('click', () => deleteHistoryItem(btn.dataset.tag, btn));
+    btn.addEventListener('click', () => deleteHistoryItem(btn.dataset.run, btn));
   });
 }
 
-async function deleteHistoryItem(tag, btnEl) {
+async function deleteHistoryItem(runNumber, btnEl) {
   if (!confirm('این مورد از تاریخچه حذف بشه؟ این کار قابل بازگشت نیست.')) return;
 
   btnEl.disabled = true;
@@ -369,7 +407,7 @@ async function deleteHistoryItem(tag, btnEl) {
   btnEl.innerHTML = '…';
 
   try {
-    const res = await fetch(`${API_BASE_URL}/history/${encodeURIComponent(tag)}`, {
+    const res = await fetch(`${API_BASE_URL}/history/${encodeURIComponent(runNumber)}`, {
       method: 'DELETE',
       headers: { 'Authorization': 'Bearer ' + getToken() },
     });
