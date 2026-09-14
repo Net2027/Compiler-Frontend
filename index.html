@@ -41,18 +41,21 @@
       <p class="sub">نام، آیکون و فایل‌های سایتت رو بده تا نسخه‌ی ویندوز و اندروید ساخته بشه.</p>
 
       <form id="buildForm">
+        <label>روش ساخت</label>
+        <div class="platform-choices">
+          <label class="platform-chip">
+            <input type="radio" name="mode" id="mode_site" value="site" checked />
+            <span>🌐 تبدیل سایت به اپ</span>
+          </label>
+          <label class="platform-chip">
+            <input type="radio" name="mode" id="mode_custom" value="custom" />
+            <span>💻 پروژه‌ی آماده‌ی خودم</span>
+          </label>
+        </div>
+        <div class="hint" id="modeHint">فایل‌های سایت (html/css/js) رو بده، خودکار داخل یک اپ ویندوز/اندروید بسته‌بندی می‌شه.</div>
+
         <label>نام برنامه</label>
         <input type="text" name="app_name" id="app_name" required placeholder="مثلاً فروشگاه من" />
-
-        <label>آیکون برنامه <span class="optional">(اختیاری)</span></label>
-        <div class="dropzone dropzone-icon" id="iconDropzone">
-          <input type="file" name="icon" id="icon" accept="image/png,image/jpeg" hidden />
-          <img id="iconPreview" class="icon-preview" style="display:none;" alt="پیش‌نمایش آیکون" />
-          <div class="dropzone-body" id="iconDropBody">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg>
-            <span>یک تصویر بکش اینجا یا کلیک کن</span>
-          </div>
-        </div>
 
         <label>پلتفرم خروجی</label>
         <div class="platform-choices">
@@ -67,16 +70,57 @@
         </div>
         <div class="platform-error" id="platformError">حداقل یکی از پلتفرم‌ها را انتخاب کن.</div>
 
-        <label>فایل zip سایت</label>
-        <div class="dropzone dropzone-zip" id="zipDropzone">
-          <input type="file" name="site_zip" id="site_zip" accept=".zip" required hidden />
-          <div class="dropzone-body" id="zipDropBody">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8"/><path d="M15 3v6h6"/><path d="M11 15h.01M11 12h.01M11 18h.01"/></svg>
-            <span>فایل zip سایت رو بکش اینجا یا کلیک کن</span>
+        <!-- ===== Site mode fields ===== -->
+        <div id="siteModeFields">
+          <label>آیکون برنامه <span class="optional">(اختیاری)</span></label>
+          <div class="dropzone dropzone-icon" id="iconDropzone">
+            <input type="file" name="icon" id="icon" accept="image/png,image/jpeg" hidden />
+            <img id="iconPreview" class="icon-preview" style="display:none;" alt="پیش‌نمایش آیکون" />
+            <div class="dropzone-body" id="iconDropBody">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg>
+              <span>یک تصویر بکش اینجا یا کلیک کن</span>
+            </div>
           </div>
-          <div class="file-chip" id="zipFileChip" style="display:none;"></div>
+
+          <label>فایل zip سایت</label>
+          <div class="dropzone dropzone-zip" id="zipDropzone">
+            <input type="file" name="site_zip" id="site_zip" accept=".zip" hidden />
+            <div class="dropzone-body" id="zipDropBody">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8"/><path d="M15 3v6h6"/><path d="M11 15h.01M11 12h.01M11 18h.01"/></svg>
+              <span>فایل zip سایت رو بکش اینجا یا کلیک کن</span>
+            </div>
+            <div class="file-chip" id="zipFileChip" style="display:none;"></div>
+          </div>
+          <div class="hint">همه‌ی فایل‌های سایت (html, css, js, فونت، عکس و ...) را یک‌جا zip کن؛ فایل index.html باید در ریشه‌ی zip باشد.</div>
         </div>
-        <div class="hint">همه‌ی فایل‌های سایت (html, css, js, فونت، عکس و ...) را یک‌جا zip کن؛ فایل index.html باید در ریشه‌ی zip باشد.</div>
+
+        <!-- ===== Custom mode fields ===== -->
+        <div id="customModeFields" style="display:none;">
+          <div id="customWindowsField">
+            <label>پروژه‌ی ویندوز (zip حاوی .csproj)</label>
+            <div class="dropzone dropzone-zip" id="winProjDropzone">
+              <input type="file" name="windows_project_zip" id="windows_project_zip" accept=".zip" hidden />
+              <div class="dropzone-body" id="winProjDropBody">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8"/><path d="M15 3v6h6"/></svg>
+                <span>zip پروژه‌ی C# رو بکش اینجا یا کلیک کن</span>
+              </div>
+              <div class="file-chip" id="winProjFileChip" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div id="customAndroidField">
+            <label>پروژه‌ی اندروید (zip حاوی پروژه‌ی Gradle)</label>
+            <div class="dropzone dropzone-zip" id="androidProjDropzone">
+              <input type="file" name="android_project_zip" id="android_project_zip" accept=".zip" hidden />
+              <div class="dropzone-body" id="androidProjDropBody">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8"/><path d="M15 3v6h6"/></svg>
+                <span>zip پروژه‌ی اندروید رو بکش اینجا یا کلیک کن</span>
+              </div>
+              <div class="file-chip" id="androidProjFileChip" style="display:none;"></div>
+            </div>
+          </div>
+          <div class="hint">پروژه‌ات باید مستقل و کامل قابل‌کامپایل باشه (ویندوز: <code>dotnet publish</code> با یک .csproj در ریشه؛ اندروید: <code>gradle assembleRelease</code>). فقط کامپایل و امضا می‌شه — هیچ تغییری روی کدت اعمال نمی‌شه.</div>
+        </div>
 
         <button type="submit" id="submitBtn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>

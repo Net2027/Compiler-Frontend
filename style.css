@@ -361,6 +361,23 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   direction: ltr;
 }
 .history-actions a:hover { border-color: var(--accent-dim); color: var(--accent); }
+.history-source {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  margin: 0;
+  border-radius: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  direction: rtl;
+}
+.history-source:hover:not(:disabled) { border-color: var(--accent-dim); color: var(--accent); }
+.history-source:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .history-delete {
   display: inline-flex;
   align-items: center;

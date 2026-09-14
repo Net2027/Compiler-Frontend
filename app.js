@@ -29,6 +29,24 @@ const zipDropzone = document.getElementById('zipDropzone');
 const zipDropBody = document.getElementById('zipDropBody');
 const zipFileChip = document.getElementById('zipFileChip');
 
+const modeSite = document.getElementById('mode_site');
+const modeCustom = document.getElementById('mode_custom');
+const modeHint = document.getElementById('modeHint');
+const siteModeFields = document.getElementById('siteModeFields');
+const customModeFields = document.getElementById('customModeFields');
+const customWindowsField = document.getElementById('customWindowsField');
+const customAndroidField = document.getElementById('customAndroidField');
+
+const winProjInput = document.getElementById('windows_project_zip');
+const winProjDropzone = document.getElementById('winProjDropzone');
+const winProjDropBody = document.getElementById('winProjDropBody');
+const winProjFileChip = document.getElementById('winProjFileChip');
+
+const androidProjInput = document.getElementById('android_project_zip');
+const androidProjDropzone = document.getElementById('androidProjDropzone');
+const androidProjDropBody = document.getElementById('androidProjDropBody');
+const androidProjFileChip = document.getElementById('androidProjFileChip');
+
 const platformWindows = document.getElementById('platform_windows');
 const platformAndroid = document.getElementById('platform_android');
 const platformError = document.getElementById('platformError');
@@ -131,19 +149,44 @@ function formatBytes(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-setupDropzone(zipDropzone, zipInput, (files) => {
-  if (!files.length) return;
-  const file = files[0];
-  zipDropBody.style.display = 'none';
-  zipFileChip.style.display = 'flex';
-  zipFileChip.innerHTML = `<span>${escapeHtml(file.name)} — ${formatBytes(file.size)}</span><span class="chip-remove" id="zipRemove">✕</span>`;
-  document.getElementById('zipRemove').addEventListener('click', (e) => {
-    e.stopPropagation();
-    zipInput.value = '';
-    zipFileChip.style.display = 'none';
-    zipDropBody.style.display = 'flex';
+function setupZipDropzone(dropzone, input, dropBody, chipEl) {
+  setupDropzone(dropzone, input, (files) => {
+    if (!files.length) return;
+    const file = files[0];
+    dropBody.style.display = 'none';
+    chipEl.style.display = 'flex';
+    const removeId = input.id + 'Remove';
+    chipEl.innerHTML = `<span>${escapeHtml(file.name)} — ${formatBytes(file.size)}</span><span class="chip-remove" id="${removeId}">✕</span>`;
+    document.getElementById(removeId).addEventListener('click', (e) => {
+      e.stopPropagation();
+      input.value = '';
+      chipEl.style.display = 'none';
+      dropBody.style.display = 'flex';
+    });
   });
-});
+}
+
+setupZipDropzone(zipDropzone, zipInput, zipDropBody, zipFileChip);
+setupZipDropzone(winProjDropzone, winProjInput, winProjDropBody, winProjFileChip);
+setupZipDropzone(androidProjDropzone, androidProjInput, androidProjDropBody, androidProjFileChip);
+
+// --- Mode toggle (site vs custom) ---
+function applyModeVisibility() {
+  const isCustom = modeCustom.checked;
+  siteModeFields.style.display = isCustom ? 'none' : 'block';
+  customModeFields.style.display = isCustom ? 'block' : 'none';
+  modeHint.textContent = isCustom
+    ? 'پروژه‌ی خودت (C#/اندروید) رو بده، فقط کامپایل و امضا می‌شه — بدون هیچ تغییری.'
+    : 'فایل‌های سایت (html/css/js) رو بده، خودکار داخل یک اپ ویندوز/اندروید بسته‌بندی می‌شه.';
+
+  customWindowsField.style.display = platformWindows.checked ? 'block' : 'none';
+  customAndroidField.style.display = platformAndroid.checked ? 'block' : 'none';
+}
+modeSite.addEventListener('change', applyModeVisibility);
+modeCustom.addEventListener('change', applyModeVisibility);
+platformWindows.addEventListener('change', applyModeVisibility);
+platformAndroid.addEventListener('change', applyModeVisibility);
+applyModeVisibility();
 
 // --- Pipeline helpers ---
 function setPipelineStep(name, state) {
@@ -170,6 +213,20 @@ form.addEventListener('submit', (e) => {
   let platforms = 'both';
   if (platformWindows.checked && !platformAndroid.checked) platforms = 'windows';
   if (!platformWindows.checked && platformAndroid.checked) platforms = 'android';
+
+  const isCustom = modeCustom.checked;
+  if (!isCustom && zipInput.files.length === 0) {
+    alert('فایل zip سایت را انتخاب کن.');
+    return;
+  }
+  if (isCustom && platformWindows.checked && winProjInput.files.length === 0) {
+    alert('فایل zip پروژه‌ی ویندوز را انتخاب کن.');
+    return;
+  }
+  if (isCustom && platformAndroid.checked && androidProjInput.files.length === 0) {
+    alert('فایل zip پروژه‌ی اندروید را انتخاب کن.');
+    return;
+  }
 
   submitBtn.disabled = true;
   submitBtnLabel.textContent = 'در حال ارسال...';
@@ -374,6 +431,14 @@ function renderHistory(items) {
     if (item.exe_url) links.push(`<a href="${item.exe_url}">exe</a>`);
     if (item.apk_url) links.push(`<a href="${item.apk_url}">apk</a>`);
 
+    const sourceButtons = [];
+    if (item.has_source_windows) {
+      sourceButtons.push(`<button class="history-source" data-run="${item.run_number}" data-platform="windows">کد ویندوز</button>`);
+    }
+    if (item.has_source_android) {
+      sourceButtons.push(`<button class="history-source" data-run="${item.run_number}" data-platform="android">کد اندروید</button>`);
+    }
+
     row.innerHTML = `
       <div class="history-info">
         <div class="history-name">
@@ -388,6 +453,7 @@ function renderHistory(items) {
       </div>
       <div class="history-actions">
         ${links.join('')}
+        ${sourceButtons.join('')}
         <button class="history-delete" data-run="${item.run_number}" title="حذف از تاریخچه">${TRASH_ICON}</button>
       </div>
     `;
@@ -397,6 +463,48 @@ function renderHistory(items) {
   historyList.querySelectorAll('.history-delete').forEach((btn) => {
     btn.addEventListener('click', () => deleteHistoryItem(btn.dataset.run, btn));
   });
+  historyList.querySelectorAll('.history-source').forEach((btn) => {
+    btn.addEventListener('click', () => downloadSource(btn.dataset.run, btn.dataset.platform, btn));
+  });
+}
+
+async function downloadSource(runNumber, platform, btnEl) {
+  const originalText = btnEl.textContent;
+  btnEl.disabled = true;
+  btnEl.textContent = 'در حال دریافت...';
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/history/${encodeURIComponent(runNumber)}/source/${platform}`, {
+      headers: { 'Authorization': 'Bearer ' + getToken() },
+    });
+
+    if (res.status === 401) {
+      clearToken();
+      showLogin();
+      return;
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'خطای ناشناخته' }));
+      alert('خطا در دریافت کد: ' + (data.error || res.status));
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `source-${platform}-${runNumber}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('خطای شبکه در دریافت کد.');
+  } finally {
+    btnEl.disabled = false;
+    btnEl.textContent = originalText;
+  }
 }
 
 async function deleteHistoryItem(runNumber, btnEl) {
